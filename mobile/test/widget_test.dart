@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/app.dart';
+import 'package:uadb_social/app.dart';
 
 void main() {
   testWidgets('affiche le splash UADB Social', (WidgetTester tester) async {
