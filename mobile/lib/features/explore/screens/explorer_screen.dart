@@ -273,7 +273,7 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   }
 
   Widget _buildPopularCommunities() {
-    final communities = [
+    final List<Map<String, Object>> communities = [
       {'name': 'Club Informatique UADB', 'desc': 'Programmation, IA, Dev Web', 'members': '234 membres', 'icon': Icons.computer_rounded},
       {'name': 'BDE UADB', 'desc': 'Bureau des Étudiants - Vie étudiante', 'members': '1.2k membres', 'icon': Icons.people_rounded},
       {'name': 'English Club Bambey', 'desc': 'Pratique de l\'anglais, discussions', 'members': '98 membres', 'icon': Icons.translate_rounded},
@@ -292,9 +292,9 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
           itemBuilder: (context, index) {
             final c = communities[index];
             return _buildCommunityCard(
-              name: c['name']!,
-              description: c['desc']!,
-              members: c['members']!,
+              name: c['name'] as String,
+              description: c['desc'] as String,
+              members: c['members'] as String,
               icon: c['icon'] as IconData,
             );
           },

@@ -43,18 +43,12 @@ class CustomTextField extends StatefulWidget {
 class _CustomTextFieldState extends State<CustomTextField> {
   late bool _obscureText;
   late FocusNode _focusNode;
-  bool _hasFocus = false;
 
   @override
   void initState() {
     super.initState();
     _obscureText = widget.obscureText;
     _focusNode = widget.focusNode ?? FocusNode();
-    _focusNode.addListener(_onFocusChange);
-  }
-
-  void _onFocusChange() {
-    setState(() => _hasFocus = _focusNode.hasFocus);
   }
 
   @override
@@ -142,7 +136,7 @@ class DropdownField<T> extends StatelessWidget {
         Text(label, style: AppTextStyles.fieldLabel),
         const SizedBox(height: 6),
         DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           items: items,
           onChanged: enabled ? onChanged : null,
           validator: validator,
