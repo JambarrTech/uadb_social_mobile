@@ -2,9 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, mobile, developpement]
+    paths: ["mobile/**", ".github/workflows/ci.yml"]
   pull_request:
-    branches: [main]
+    branches: [main, mobile, developpement]
+    paths: ["mobile/**", ".github/workflows/ci.yml"]
 
 # Least privilege : ce workflow n'a besoin que de lire le dépôt.
 permissions:
