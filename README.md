@@ -18,3 +18,5 @@ git checkout mobile
 
 Tous les travaux de développement se font sur une branche dédiée ;
 `main` ne reçoit que des intégrations validées.
+
+📄 **Guide de collaboration** : [docs/WORKFLOW.md](docs/WORKFLOW.md)
