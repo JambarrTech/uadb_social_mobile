@@ -1,6 +1,7 @@
 # =========================================================
-# UADB Social — racine du dépôt
-# (le dossier mobile/ possède son propre .gitignore Flutter)
+# UADB Social — .gitignore racine
+# (les branches de dev ont leurs propres .gitignore ; celui-ci
+# protège la base et la copie locale)
 # =========================================================
 
 # === Secrets / credentials — JAMAIS versionner ============
@@ -20,31 +21,41 @@
 **/key.properties
 **/local.properties
 
-# === Dart / Flutter ========================================
-.dart_tool/
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-/pub/
-/coverage/
-
-# === IDE / Éditeurs ========================================
+# === IDE / éditeurs =======================================
 .idea/
 *.iml
 *.ipr
 *.iws
 .vscode/
-.swp
 *.swp
 
-# === OS ====================================================
+# === OS ===================================================
 .DS_Store
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-# === Logs ==================================================
+# === Logs / détritus ======================================
 *.log
 *.class
 *.pyc
+
+# === Dart / Flutter =======================================
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+pub/
+
+# === Artefacts générés par les builds Flutter (cache local)
+**/ephemeral/
+**/.gradle/
+**/gradle-wrapper.jar
+**/gradlew
+**/gradlew.bat
+**/GeneratedPluginRegistrant.*
+**/Generated.xcconfig
+**/Flutter-Generated.xcconfig
+**/icudtl.dat
+**/libflutter_linux_gtk.so
