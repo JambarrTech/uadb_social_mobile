@@ -25,8 +25,25 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onNavTap(int index) {
     if (index == 2) {
       context.go('/create-post');
-    } else {
+      return;
+    }
+    // Ne navigue que si l'utilisateur change réellement d'onglet.
+    if (index != _currentNavIndex) {
       setState(() => _currentNavIndex = index);
+      context.go(_routeForNavIndex(index));
+    }
+  }
+
+  String _routeForNavIndex(int index) {
+    switch (index) {
+      case 1:
+        return '/explore';
+      case 3:
+        return '/messages';
+      case 4:
+        return '/profile';
+      default:
+        return '/home';
     }
   }
 

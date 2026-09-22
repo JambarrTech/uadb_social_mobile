@@ -169,8 +169,6 @@ class _LoginScreenState extends State<LoginScreen> {
               errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 20),
             ),
           ),
-          const SizedBox(height: 24),
-          _buildRegisterLink(),
         ],
       ),
     );
@@ -190,24 +188,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildFooterLinks() {
-    return Center(
-      child: Text.rich(
-        TextSpan(
-          style: AppTextStyles.linkTextMuted,
-          children: [
-            const TextSpan(text: 'Pas encore de compte ? '),
-            TextSpan(
-              text: 'S\'inscrire',
-              style: AppTextStyles.linkText,
-              recognizer: TapGestureRecognizer()..onTap = () => context.go('/register'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRegisterLink() {
     return Center(
       child: Text.rich(
         TextSpan(
