@@ -16,55 +16,21 @@ class UadbLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final circle = Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.school_rounded, size: size * 0.28, color: AppColors.green),
-          SizedBox(height: size * 0.02),
-          Text(
-            'UADB',
-            style: TextStyle(
-              fontSize: size * 0.14,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primary,
-              height: 1,
-              letterSpacing: 0.6,
-            ),
-          ),
-          Text(
-            'SOCIAL',
-            style: TextStyle(
-              fontSize: size * 0.09,
-              fontWeight: FontWeight.w700,
-              color: AppColors.green,
-              letterSpacing: 1.4,
-              height: 1.2,
-            ),
-          ),
-        ],
+    final logo = ClipOval(
+      child: Image.asset(
+        'logo.jpeg',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
       ),
     );
 
-    if (!showTagline) return circle;
+    if (!showTagline) return logo;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        circle,
+        logo,
         const SizedBox(height: 28),
         Text(
           'Le réseau de votre communauté.',

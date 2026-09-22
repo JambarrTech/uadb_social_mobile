@@ -11,9 +11,19 @@ pluginManagement {
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
+        maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin/") }
+        maven { url = uri("https://maven.aliyun.com/repository/central/") }
         google()
         mavenCentral()
         gradlePluginPortal()
+    }
+
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.namespace == "org.jetbrains.kotlin") {
+                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:${requested.version}")
+            }
+        }
     }
 }
 

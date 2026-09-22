@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../widgets/uadb_logo.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -60,6 +61,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const Center(child: UadbLogo(size: 92)),
+                  const SizedBox(height: 16),
                   const Text(
                     'Créer un compte',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
