@@ -21,53 +21,83 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final posts = ref.watch(feedProvider);
     final user = ref.watch(currentUserProvider);
-    final isDemoOnly = ref.watch(feedProvider.notifier).isDemoOnly;
     final savedIds = ref.watch(savedIdsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundAuth,
-      body: Column(
-        children: [
-          const SafeArea(bottom: false, child: _HomeHeader()),
-          // Composeur épinglé sous le trait du header : pas de marge
-          // superflue entre les deux (8 px de respiration seulement), les
-          // 12 px latéraux sont la gouttière commune du fil.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-            child: PostComposerCard(
-              displayName: user.fullName,
-              avatarUrl: user.avatarUrl,
-              initials: user.initials,
-              // Un vrai flux par contrôle, réutilisant ce qui existe déjà :
-              // - le champ et « Publier » ouvrent l'écran de création
-              //   (validation du contenu incluse) ;
-              // - « Photo » ouvre ce même écran puis déclenche immédiatement
-              //   le sélecteur d'images du projet ;
-              // - « Vidéo » et « Événement » n'ont pas d'équivalent côté
-              //   données (aucune vidéo ni fiche événement dans le modèle
-              //   Post) : état explicite « bientôt disponible », même
-              //   message que les options de l'écran de création.
-              onTapField: () => context.pushNamed('create-post'),
-              onTapPhoto: () => context.pushNamed(
-                'create-post',
-                extra: {'openImagePicker': true},
-              ),
-              onTapVideo: () => showAppSnackBar(
-                context,
-                'Vidéo : bientôt disponible.',
-                isError: true,
-              ),
-              onTapEvent: () => showAppSnackBar(
-                context,
-                'Événement : bientôt disponible.',
-                isError: true,
-              ),
-              onTapPublish: () => context.pushNamed('create-post'),
-            ),
-          ),
-          Expanded(
-            child: posts.isEmpty
-                ? _Fill(
+      // Header, composeur et fil défilent ensemble dans un même `ListView` :
+      // le header n'est plus épinglé. Le `LayoutBuilder` borne seulement le
+      // remplissage de l'état vide (un enfant de `ListView` n'a pas de
+      // hauteur exploitable de lui-même).
+      body: LayoutBuilder(
+        builder: (context, constraints) => Center(
+          // Gouttière explicite plutôt qu'`AppPage` : celui-ci n'applique sa
+          // marge horizontale que si
+          // `MediaQuery.sizeOf(context).width < 600`, or ce chiffre ne
+          // reflète pas toujours la fenêtre réellement rendue (mesuré à
+          // 800 px pour une surface de 390 px). Le fil dépend donc de rien
+          // d'autre que ses propres gouttières, identiques et constantes sur
+          // téléphone.
+          //
+          // Sur écran large, la colonne reste lisible mais plafonnée ; sur
+          // téléphone, la contrainte est sans effet car la fenêtre est plus
+          // étroite.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: ContentWidth.feed),
+            child: ListView(
+              // padding nul : chaque enfant gère sa propre gouttière, car le
+              // header (trait bleu inclus) doit rester pleine largeur alors
+              // que les cartes sont entre 12 px de gouttières.
+              padding: EdgeInsets.zero,
+              children: [
+                const SafeArea(bottom: false, child: _HomeHeader()),
+                // Composeur juste sous le header, dans le défilement : pas
+                // de marge superflue au-dessus (8 px de respiration), les
+                // 12 px latéraux sont la gouttière commune du fil et 10 px
+                // en bas pour le rythme des cartes.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+                  child: PostComposerCard(
+                    displayName: user.fullName,
+                    avatarUrl: user.avatarUrl,
+                    initials: user.initials,
+                    // Un vrai flux par contrôle, réutilisant ce qui existe
+                    // déjà :
+                    // - le champ et « Publier » ouvrent l'écran de création
+                    //   (validation du contenu incluse) ;
+                    // - « Photo » ouvre ce même écran puis déclenche
+                    //   immédiatement le sélecteur d'images du projet ;
+                    // - « Vidéo » et « Événement » n'ont pas d'équivalent
+                    //   côté données (aucune vidéo ni fiche événement dans
+                    //   le modèle Post) : état explicite « bientôt
+                    //   disponible », même message que les options de
+                    //   l'écran de création.
+                    onTapField: () => context.pushNamed('create-post'),
+                    onTapPhoto: () => context.pushNamed(
+                      'create-post',
+                      extra: {'openImagePicker': true},
+                    ),
+                    onTapVideo: () => showAppSnackBar(
+                      context,
+                      'Vidéo : bientôt disponible.',
+                      isError: true,
+                    ),
+                    onTapEvent: () => showAppSnackBar(
+                      context,
+                      'Événement : bientôt disponible.',
+                      isError: true,
+                    ),
+                    onTapPublish: () => context.pushNamed('create-post'),
+                  ),
+                ),
+                if (posts.isEmpty)
+                  // État vide : le remplissage est borné à la hauteur de la
+                  // fenêtre pour occuper visuellement la page, comme le
+                  // faisait l'ancien `_Fill`.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
                     child: EmptyView(
                       icon: Icons.article_outlined,
                       title: 'Aucune publication',
@@ -83,84 +113,33 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                   )
-                : Center(
-                    // Gouttière explicite plutôt qu'`AppPage` : celui-ci
-                    // n'applique sa marge horizontale que si
-                    // `MediaQuery.sizeOf(context).width < 600`, or ce chiffre
-                    // ne reflète pas toujours la fenêtre réellement rendue
-                    // (mesuré à 800 px pour une surface de 390 px). Le fil
-                    // dépend donc de rien d'autre que ses propres gouttières,
-                    // identiques et constantes sur téléphone.
-                    // Sur écran large, la colonne reste lisible mais
-                    // plafonnée ; sur téléphone, la contrainte est sans
-                    // effet car la fenêtre est plus étroite.
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: ContentWidth.feed,
-                      ),
-                      child: ListView(
-                        // 12 px de gouttière gauche et droite pour toutes
-                        // les cartes, 10 px de départ, puis 80 px pour que
-                        // la dernière publication ne repose jamais sous la
-                        // barre de navigation inférieure (52 px + marge).
-                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 80),
-                        children: [
-                          if (isDemoOnly) ...[
-                            const SizedBox(height: 10),
-                            const DemoNotice(
-                              message:
-                                  'Contenu de démonstration : aucun serveur '
-                                  'UADB Social n’est encore branché. Les '
-                                  'publications que vous créez sont bien '
-                                  'enregistrées sur l’appareil.',
-                            ),
-                          ],
-                          const SizedBox(height: 10),
-                          for (final post in posts) ...[
-                            PostCard(
-                              post: post,
-                              onLike: () => ref
-                                  .read(feedProvider.notifier)
-                                  .toggleLike(post.id),
-                              onShare: () => ref
-                                  .read(feedProvider.notifier)
-                                  .share(post.id),
-                              // Favoris : état lu dans le contrôleur
-                              // persistant, bascule confiée à la carte.
-                              isSaved: savedIds.contains(post.id),
-                              onToggleSave: () => ref
-                                  .read(savedIdsProvider.notifier)
-                                  .toggle(post.id),
-                            ),
-                            const SizedBox(height: 10),
-                          ],
-                          const SizedBox(height: 80),
-                        ],
+                else ...[
+                  const SizedBox(height: 10),
+                  for (final post in posts) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: PostCard(
+                        post: post,
+                        onLike: () =>
+                            ref.read(feedProvider.notifier).toggleLike(post.id),
+                        onShare: () =>
+                            ref.read(feedProvider.notifier).share(post.id),
+                        // Favoris : état lu dans le contrôleur persistant,
+                        // bascule confiée à la carte.
+                        isSaved: savedIds.contains(post.id),
+                        onToggleSave: () =>
+                            ref.read(savedIdsProvider.notifier).toggle(post.id),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                  ],
+                ],
+                // 80 px pour que la dernière publication ne repose jamais
+                // sous la barre de navigation inférieure (52 px + marge).
+                const SizedBox(height: 80),
+              ],
+            ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Remplit la hauteur disponible tout en restant défilable, afin qu'un écran
-/// vide occupe bien la page.
-class _Fill extends StatelessWidget {
-  const _Fill({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: child,
         ),
       ),
     );

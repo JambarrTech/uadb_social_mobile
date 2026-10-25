@@ -145,9 +145,9 @@ class PostComposerCard extends StatelessWidget {
                 ),
                 // Respiration franche entre le groupe d'actions et le
                 // bouton principal : deux éléments de natures différentes
-                // (fonctions d'attachement vs validation), séparés plus
-                // nettement qu'à l'intérieur du groupe lui-même.
-                const SizedBox(width: 16),
+                // (fonctions d'attachement vs validation), séparés avec
+                // beaucoup plus d'air qu'à l'intérieur du groupe lui-même.
+                const SizedBox(width: 24),
                 _PublishButton(onTap: onTapPublish),
               ],
             ),
