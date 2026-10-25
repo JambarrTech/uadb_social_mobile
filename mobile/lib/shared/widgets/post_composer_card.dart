@@ -127,12 +127,18 @@ class PostComposerCard extends StatelessWidget {
                           color: AppColors.primaryBlue,
                           onTap: onTapPhoto,
                         ),
+                        // Rythme régulier entre les trois actions : le
+                        // padding interne de chaque InkWell (6 px) donne
+                        // déjà une marge fine ; 8 px de plus décollent
+                        // franchement chaque groupe de l'autre.
+                        const SizedBox(width: 8),
                         _ComposerAction(
                           icon: Icons.videocam_outlined,
                           label: 'Vidéo',
                           color: AppColors.locationRed,
                           onTap: onTapVideo,
                         ),
+                        const SizedBox(width: 8),
                         _ComposerAction(
                           icon: Icons.event_outlined,
                           label: 'Événement',
@@ -250,17 +256,17 @@ class _ComposerAction extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 5),
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
             Text(
               label,
               maxLines: 1,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 color: AppColors.textMedium,
                 fontWeight: FontWeight.w500,
               ),
