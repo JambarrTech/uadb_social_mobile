@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
@@ -17,7 +18,7 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
           top: BorderSide(color: AppColors.borderSeparator, width: 1),
@@ -81,7 +82,7 @@ class BottomNavBar extends StatelessWidget {
         onTap: () => onTap(index),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -91,19 +92,25 @@ class BottomNavBar extends StatelessWidget {
                   Icon(
                     isActive ? activeIcon : icon,
                     color: isActive ? activeColor : AppColors.textMuted,
-                    size: 24,
+                    size: 26,
                   ),
                   if (badgeCount > 0)
                     Positioned(
-                      right: -6,
-                      top: -6,
+                      right: -8,
+                      top: -4,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.badgeRed,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        constraints: const BoxConstraints(
+                          minWidth: 18,
+                          minHeight: 18,
+                        ),
                         child: Text(
                           badgeCount > 9 ? '9+' : badgeCount.toString(),
                           style: AppTextStyles.badgeText,
@@ -113,11 +120,16 @@ class BottomNavBar extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Text(
                 label,
-                style: (isActive ? AppTextStyles.bottomNavLabelActive : AppTextStyles.bottomNavLabelInactive)
-                    .copyWith(color: isActive ? activeColor : AppColors.textMuted),
+                style:
+                    (isActive
+                            ? AppTextStyles.bottomNavLabelActive
+                            : AppTextStyles.bottomNavLabelInactive)
+                        .copyWith(
+                          color: isActive ? activeColor : AppColors.textMuted,
+                        ),
               ),
             ],
           ),
@@ -128,25 +140,29 @@ class BottomNavBar extends StatelessWidget {
 
   Widget _buildCenterButton() {
     return SizedBox(
-      width: 60,
+      width: 64,
       child: InkWell(
         onTap: () => onTap(2),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         child: Container(
-          width: 48,
-          height: 48,
+          width: 52,
+          height: 52,
           decoration: BoxDecoration(
-            color: AppColors.primaryBlue,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0052B4), AppColors.primaryBlue],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryBlue.withValues(alpha: 0.3),
-                blurRadius: 8,
+                color: AppColors.primaryBlue.withValues(alpha: 0.4),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
         ),
       ),
     );

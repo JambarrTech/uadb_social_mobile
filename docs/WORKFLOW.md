@@ -82,8 +82,19 @@ git checkout mobile
 ## 6. CI / GitHub Actions
 
 - Le workflow `ci.yml` s'exécute sur `main`, `developpement` et `mobile` quand le chemin `mobile/**` change.
-- Vérifications : `flutter analyze --no-fatal-infos --no-fatal-warnings` puis `flutter test`.
+- Vérifications : `flutter analyze` (strict : les infos et warnings bloquent) puis `flutter test` puis `flutter build web --release`.
 - Dependabot met à jour `pub`, `github-actions` et `gradle` automatiquement.
+
+## 6 bis. Configuration de l'application
+
+L'URL du backend est injectée à la compilation, jamais codée en dur :
+
+```sh
+flutter run --dart-define=API_BASE_URL=https://staging.uadb-social.sn
+```
+
+Le détail du contrat d'API, des identifiants de package et des fonctionnalités
+non encore branchées est documenté dans [`MOBILE_CONFIG.md`](./MOBILE_CONFIG.md).
 
 ## 7. Protection de la branche main (à configurer)
 

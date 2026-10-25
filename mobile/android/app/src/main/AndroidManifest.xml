@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Indispensable : sans cette permission, aucune requête HTTP ne peut
+         aboutir dans un build release (elle n'est fournie que par les
+         manifestes debug/profile). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="UADB SOCIAL"
         android:name="${applicationName}"

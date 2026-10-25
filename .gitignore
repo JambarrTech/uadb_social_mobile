@@ -50,3 +50,11 @@ Desktop.ini
 *.pyc
 
 doctor_out.txt
+analyze_out.txt
+pub_get.txt
+
+# === Sorties de tests / captures générées ==================
+mobile/test/shots/
+
+# === Backups locaux (ne pas versionner) ====================
+mobile/tool/assets_backup/

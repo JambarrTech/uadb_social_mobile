@@ -41,11 +41,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # Les lints existants (infos/warnings) ne bloquent pas encore :
-      # seules les erreurs de compilation sont fatales.
-      # À durcir plus tard en `flutter analyze` une fois le dette technique traitée.
+      # Analyse stricte : les infos ET les warnings bloquent la CI, afin
+      # d'empêcher la réaccumulation de dette technique.
       - name: Analyze
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: flutter analyze
 
       - name: Test
         run: flutter test
+
+      # Vérifie que l'application compile pour la cible web (cf. le layout
+      # responsive et l'absence de dart:io).
+      - name: Build web
+        run: flutter build web --release

@@ -1,9 +1,45 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/widgets/bottom_nav_bar.dart';
+import '../../../shared/widgets/responsive.dart';
 import '../../../shared/widgets/user_avatar.dart';
+
+/// Contenus mis en avant.
+///
+/// Le backend n'expose pas encore d'endpoint d'exploration : ces entrées sont
+/// identifiées comme données de démonstration et la recherche filtre dessus
+/// localement. Elles seront remplacées par l'API.
+class ExploreEntry {
+  const ExploreEntry({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+}
+
+const List<ExploreEntry> _trending = [
+  ExploreEntry(title: 'Rentrée universitaire 2026', subtitle: '1,2 k publications'),
+  ExploreEntry(title: 'Clubs et associations', subtitle: 'Rejoignez un groupe'),
+  ExploreEntry(title: 'Examens et emplois', subtitle: 'Session de rattrapage'),
+  ExploreEntry(title: 'Campus et bibliothèque', subtitle: 'Horaires et espaces'),
+];
+
+const List<ExploreEntry> _communities = [
+  ExploreEntry(title: 'Club Tech UADB', subtitle: 'Association étudiante'),
+  ExploreEntry(title: 'Littérature & Poésie', subtitle: 'Club de lecture'),
+  ExploreEntry(title: 'Étudiants Internationaux', subtitle: 'Communauté'),
+];
+
+const List<ExploreEntry> _events = [
+  ExploreEntry(
+    title: 'Atelier Git & GitHub',
+    subtitle: 'Samedi, 10h · Salle A12',
+  ),
+  ExploreEntry(
+    title: 'Conférence entrepreneuriat',
+    subtitle: 'Mardi 18h · Amphi 2',
+  ),
+];
 
 class ExplorerScreen extends StatefulWidget {
   const ExplorerScreen({super.key});
@@ -13,11 +49,8 @@ class ExplorerScreen extends StatefulWidget {
 }
 
 class _ExplorerScreenState extends State<ExplorerScreen> {
-  int _currentNavIndex = 1;
-  int _selectedFilter = 0;
   final TextEditingController _searchController = TextEditingController();
-
-  static const List<String> _filters = ['Tout', 'Personnes', 'Publications', 'Communautés', 'Événements'];
+  String _query = '';
 
   @override
   void dispose() {
@@ -25,54 +58,67 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
     super.dispose();
   }
 
-  void _onNavTap(int index) {
-    if (index == 2) {
-      context.go('/create-post');
-      return;
-    }
-    // Ne navigue que si l'utilisateur change réellement d'onglet.
-    if (index != _currentNavIndex) {
-      setState(() => _currentNavIndex = index);
-      context.go(_routeForNavIndex(index));
-    }
+  List<ExploreEntry> _matches(List<ExploreEntry> entries) {
+    if (_query.isEmpty) return entries;
+    return entries
+        .where(
+          (entry) =>
+              entry.title.toLowerCase().contains(_query) ||
+              entry.subtitle.toLowerCase().contains(_query),
+        )
+        .toList();
   }
 
-  String _routeForNavIndex(int index) {
-    switch (index) {
-      case 0:
-        return '/home';
-      case 3:
-        return '/messages';
-      case 4:
-        return '/profile';
-      default:
-        return '/explore';
-    }
-  }
+  void _onSearchChanged(String value) =>
+      setState(() => _query = value.trim().toLowerCase());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundFeed,
+      backgroundColor: AppColors.backgroundAuth,
       body: SafeArea(
         child: Column(
           children: [
-            _buildSearchBar(),
-            _buildFilterTabs(),
+            _Header(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+            ),
+            const Divider(height: 1),
             Expanded(
-              child: SingleChildScrollView(
+              child: AppPage(
+                scrollable: false,
+                maxWidth: ContentWidth.feed,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: ListView(
                   children: [
-                    _buildTrendingPosts(),
-                    const SizedBox(height: 24),
-                    _buildSuggestedPeople(),
-                    const SizedBox(height: 24),
-                    _buildPopularCommunities(),
-                    const SizedBox(height: 24),
-                    _buildUpcomingEvents(),
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 20),
+                    const _DemoDataNotice(),
+                    const SizedBox(height: 20),
+                    _Section(
+                      title: 'Tendances',
+                      entries: _matches(_trending),
+                      emptyLabel: 'aucune tendance',
+                    ),
+                    const SizedBox(height: 28),
+                    const _Section(
+                      title: 'Personnes à suivre',
+                      notice:
+                          'Les suggestions de comptes seront disponibles dès '
+                          'que le backend exposera l’annuaire de l’UADB.',
+                    ),
+                    const SizedBox(height: 28),
+                    _Section(
+                      title: 'Communautés populaires',
+                      entries: _matches(_communities),
+                      emptyLabel: 'aucune communauté',
+                    ),
+                    const SizedBox(height: 28),
+                    _Section(
+                      title: 'Événements à venir',
+                      entries: _matches(_events),
+                      emptyLabel: 'aucun événement',
+                    ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -80,254 +126,134 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentNavIndex,
-        onTap: _onNavTap,
-        messagesBadgeCount: 3,
-      ),
     );
   }
+}
 
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+class _Header extends StatelessWidget {
+  const _Header({required this.controller, required this.onChanged});
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       child: Container(
-        height: 48,
+        height: 40,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: AppColors.borderSeparator),
+          color: AppColors.backgroundFeed,
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Rechercher sur UADB Social...',
-            hintStyle: AppTextStyles.fieldPlaceholder.copyWith(fontSize: 13),
-            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 22),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterTabs() {
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final isActive = _selectedFilter == index;
-          return FilterChip(
-            label: Text(
-              _filters[index],
-              style: TextStyle(
-                fontFamily: 'SpaceGrotesk',
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: isActive ? Colors.white : AppColors.textMedium,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Row(
+          children: [
+            const Icon(Icons.search_rounded, size: 18, color: AppColors.textMuted),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: controller,
+                onChanged: onChanged,
+                textInputAction: TextInputAction.search,
+                style: const TextStyle(fontSize: 14),
+                decoration: const InputDecoration(
+                  hintText: 'Rechercher sur UADB Social',
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
             ),
-            selected: isActive,
-            onSelected: (_) => setState(() => _selectedFilter = index),
-            backgroundColor: Colors.transparent,
-            selectedColor: isActive && index == 1 ? AppColors.explorerActive : AppColors.primaryBlue,
-            checkmarkColor: Colors.white,
-            side: BorderSide(
-              color: isActive ? Colors.transparent : AppColors.borderSeparator,
-            ),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          );
-        },
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildTrendingPosts() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Publications tendance', style: AppTextStyles.explorerSectionTitle),
-        const SizedBox(height: 12),
-        _buildTrendingPostCard(
-          author: 'Aminata Diallo',
-          time: '· 10h ago',
-          content:
-              'Super enthousiaste pour le hackathon UADB ce week-end ! Qui d\'autre participe ?',
-          likes: 24,
-          comments: 8,
-        ),
-        const SizedBox(height: 12),
-        _buildTrendingPostCard(
-          author: 'Moussa Ndiaye',
-          time: '· 2j ago',
-          content:
-              'Journée terrain à Nianing avec la promo M1 Agronomie. Expérience enrichissante !',
-          likes: 45,
-          comments: 3,
-        ),
-      ],
-    );
-  }
+class _DemoDataNotice extends StatelessWidget {
+  const _DemoDataNotice();
 
-  Widget _buildTrendingPostCard({
-    required String author,
-    required String time,
-    required String content,
-    required int likes,
-    required int comments,
-  }) {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSeparator),
+        color: AppColors.orangeRed.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Text(author, style: AppTextStyles.explorerCardTitle),
-              const SizedBox(width: 8),
-              Text(time, style: AppTextStyles.explorerCardSubtitle),
-            ],
+          const Icon(
+            Icons.info_outline_rounded,
+            size: 16,
+            color: AppColors.orangeRed,
           ),
-          const SizedBox(height: 8),
-          Text(content, style: AppTextStyles.explorerCardContent, maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.favorite_border_rounded, size: 16, color: AppColors.textMuted),
-              const SizedBox(width: 4),
-              Text('$likes', style: AppTextStyles.interactionCount.copyWith(fontSize: 10)),
-              const SizedBox(width: 16),
-              Icon(Icons.chat_bubble_outline_rounded, size: 16, color: AppColors.textMuted),
-              const SizedBox(width: 4),
-              Text('$comments', style: AppTextStyles.interactionCount.copyWith(fontSize: 10)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSuggestedPeople() {
-    final people = <Map<String, String?>>[
-      {'name': 'Ibrahima Fall', 'role': 'M2 Informatique', 'avatar': null},
-      {'name': 'Aïssatou Bâ', 'role': 'L2 Anglais', 'avatar': null},
-      {'name': 'Dr. Cheikh Mbaye', 'role': 'Enseignant Maths', 'avatar': null},
-      {'name': 'Mariama Diallo', 'role': 'L1 Économie', 'avatar': null},
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Personnes suggérées', style: AppTextStyles.explorerSectionTitle),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 160,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: people.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final person = people[index];
-              return _buildSuggestedPersonCard(
-                name: person['name']!,
-                role: person['role']!,
-                avatarUrl: person['avatar'],
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSuggestedPersonCard({
-    required String name,
-    required String role,
-    String? avatarUrl,
-  }) {
-    return Container(
-      width: 130,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSeparator),
-      ),
-      child: Column(
-        children: [
-          UserAvatar(initials: _getInitials(name), radius: 36, imageUrl: avatarUrl),
-          const SizedBox(height: 10),
-          Text(name, style: AppTextStyles.suggestedPersonName, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 2),
-          Text(role, style: AppTextStyles.suggestedPersonRole, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            height: 30,
-            decoration: BoxDecoration(
-              color: AppColors.followGreen,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Center(
-              child: Text('Suivre', style: AppTextStyles.buttonPrimary.copyWith(fontSize: 10)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Contenu de démonstration : l’API d’exploration n’est pas '
+              'encore disponible.',
+              style: AppTextStyles.createPostHint.copyWith(
+                color: AppColors.orangeRed,
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildPopularCommunities() {
-    final List<Map<String, Object>> communities = [
-      {'name': 'Club Informatique UADB', 'desc': 'Programmation, IA, Dev Web', 'members': '234 membres', 'icon': Icons.computer_rounded},
-      {'name': 'BDE UADB', 'desc': 'Bureau des Étudiants - Vie étudiante', 'members': '1.2k membres', 'icon': Icons.people_rounded},
-      {'name': 'English Club Bambey', 'desc': 'Pratique de l\'anglais, discussions', 'members': '98 membres', 'icon': Icons.translate_rounded},
-    ];
+class _Section extends StatelessWidget {
+  const _Section({
+    required this.title,
+    this.entries = const [],
+    this.notice,
+    this.emptyLabel = '',
+  });
 
+  final String title;
+  final List<ExploreEntry> entries;
+  final String? notice;
+  final String emptyLabel;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Communautés populaires', style: AppTextStyles.explorerSectionTitle),
+        Text(title, style: AppTextStyles.explorerSectionTitle),
         const SizedBox(height: 12),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: communities.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (context, index) {
-            final c = communities[index];
-            return _buildCommunityCard(
-              name: c['name'] as String,
-              description: c['desc'] as String,
-              members: c['members'] as String,
-              icon: c['icon'] as IconData,
-            );
-          },
-        ),
+        if (notice != null)
+          _NoticeCard(message: notice!)
+        else if (entries.isEmpty)
+          Text(
+            'Aucun résultat : $emptyLabel.',
+            style: AppTextStyles.createPostHint,
+          )
+        else
+          for (final entry in entries) ...[
+            _EntryTile(entry: entry),
+            const SizedBox(height: 8),
+          ],
       ],
     );
   }
+}
 
-  Widget _buildCommunityCard({
-    required String name,
-    required String description,
-    required String members,
-    required IconData icon,
-  }) {
+class _NoticeCard extends StatelessWidget {
+  const _NoticeCard({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -335,135 +261,78 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: AppColors.primaryBlue, size: 24),
-          ),
+          const Icon(Icons.person_search_outlined, color: AppColors.textMuted),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: AppTextStyles.communityName),
-                const SizedBox(height: 2),
-                Text(description, style: AppTextStyles.communityDesc, maxLines: 1, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 4),
-                Text(members, style: AppTextStyles.communityMembers),
-              ],
-            ),
-          ),
-          OutlinedButton(
-            onPressed: () {},
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.joinGreen,
-              side: const BorderSide(color: AppColors.joinGreen),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text('Rejoindre', style: AppTextStyles.buttonPrimary.copyWith(fontSize: 10, color: AppColors.joinGreen)),
+            child: Text(message, style: AppTextStyles.createPostHint),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildUpcomingEvents() {
-    final events = [
-      {'day': 'MAR', 'date': '15', 'title': 'Journée Portes Ouvertes UADB 2025', 'location': 'Campus principal'},
-      {'day': 'JEU', 'date': '24', 'title': 'Hackathon IA & Agriculture', 'location': 'UFR SAT Lab'},
-    ];
+class _EntryTile extends StatelessWidget {
+  const _EntryTile({required this.entry});
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Événements à venir', style: AppTextStyles.explorerSectionTitle),
-        const SizedBox(height: 12),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: events.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final e = events[index];
-            return _buildEventCard(
-              day: e['day']!,
-              date: e['date']!,
-              title: e['title']!,
-              location: e['location']!,
-            );
-          },
-        ),
-      ],
-    );
-  }
+  final ExploreEntry entry;
 
-  Widget _buildEventCard({
-    required String day,
-    required String date,
-    required String title,
-    required String location,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSeparator),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.eventDateBg,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(day, style: AppTextStyles.eventDay),
-                const SizedBox(height: 2),
-                Text(date, style: AppTextStyles.eventDate),
-              ],
+        onTap: () => ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text('« ${entry.title} » : bientôt disponible.'),
+              behavior: SnackBarBehavior.floating,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppTextStyles.eventTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
-                Row(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              UserAvatar(initials: _initials(entry.title), radius: 18),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.location_on_outlined, size: 12, color: AppColors.textMuted),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(location, style: AppTextStyles.eventLocation, overflow: TextOverflow.ellipsis),
+                    Text(
+                      entry.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.explorerCardTitle,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      entry.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.explorerCardSubtitle,
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  String _getInitials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  static String _initials(String title) {
+    final words = title
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return '?';
+    if (words.length == 1) return words.first[0].toUpperCase();
+    return '${words[0][0]}${words[1][0]}'.toUpperCase();
   }
 }

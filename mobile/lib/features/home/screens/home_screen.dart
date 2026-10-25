@@ -1,198 +1,276 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/widgets/bottom_nav_bar.dart';
+import '../../../shared/widgets/custom_button.dart';
+import '../../../shared/widgets/demo_notice.dart';
+import '../../../shared/widgets/empty_view.dart';
 import '../../../shared/widgets/post_card.dart';
+import '../../../shared/widgets/post_composer_card.dart';
+import '../../../shared/widgets/responsive.dart';
+import '../../auth/state/auth_controller.dart';
+import '../../feed/state/feed_controller.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final posts = ref.watch(feedProvider);
+    final user = ref.watch(currentUserProvider);
+    final isDemoOnly = ref.watch(feedProvider.notifier).isDemoOnly;
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentNavIndex = 0;
-  final TextEditingController _postController = TextEditingController();
-
-  @override
-  void dispose() {
-    _postController.dispose();
-    super.dispose();
-  }
-
-  void _onNavTap(int index) {
-    if (index == 2) {
-      context.go('/create-post');
-      return;
-    }
-    // Ne navigue que si l'utilisateur change réellement d'onglet.
-    if (index != _currentNavIndex) {
-      setState(() => _currentNavIndex = index);
-      context.go(_routeForNavIndex(index));
-    }
-  }
-
-  String _routeForNavIndex(int index) {
-    switch (index) {
-      case 1:
-        return '/explore';
-      case 3:
-        return '/messages';
-      case 4:
-        return '/profile';
-      default:
-        return '/home';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundFeed,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  children: [
-                    CreatePostCard(
-                      currentUserName: 'Fatou Sow',
-                      currentUserAvatar: null,
-                      onTap: () => context.go('/create-post'),
-                      onPhoto: () {},
-                      onVideo: () {},
-                      onEvent: () {},
-                    ),
-                    const SizedBox(height: 12),
-                    _buildFeed(),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: _currentNavIndex,
-        onTap: _onNavTap,
-        messagesBadgeCount: 3,
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
+      backgroundColor: AppColors.backgroundAuth,
+      body: Column(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: AppColors.green,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.home_rounded, color: Colors.white, size: 20),
+          const SafeArea(bottom: false, child: _HomeHeader()),
+          // Composeur épinglé sous le trait du header : pas de marge
+          // superflue entre les deux (8 px de respiration seulement), les
+          // 12 px latéraux sont la gouttière commune du fil.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+            child: PostComposerCard(
+              displayName: user.fullName,
+              avatarUrl: user.avatarUrl,
+              initials: user.initials,
+              // Un vrai flux par contrôle, réutilisant ce qui existe déjà :
+              // - le champ et « Publier » ouvrent l'écran de création
+              //   (validation du contenu incluse) ;
+              // - « Photo » ouvre ce même écran puis déclenche immédiatement
+              //   le sélecteur d'images du projet ;
+              // - « Vidéo » et « Événement » n'ont pas d'équivalent côté
+              //   données (aucune vidéo ni fiche événement dans le modèle
+              //   Post) : état explicite « bientôt disponible », même
+              //   message que les options de l'écran de création.
+              onTapField: () => context.pushNamed('create-post'),
+              onTapPhoto: () => context.pushNamed(
+                'create-post',
+                extra: {'openImagePicker': true},
               ),
-              const SizedBox(width: 8),
-              Text(
-                'UADB SOCIAL',
-                style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryBlue,
-                  letterSpacing: 0.5,
-                ),
+              onTapVideo: () => showAppSnackBar(
+                context,
+                'Vidéo : bientôt disponible.',
+                isError: true,
               ),
-            ],
+              onTapEvent: () => showAppSnackBar(
+                context,
+                'Événement : bientôt disponible.',
+                isError: true,
+              ),
+              onTapPublish: () => context.pushNamed('create-post'),
+            ),
           ),
-          const Spacer(),
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none_rounded, color: AppColors.textDark, size: 26),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: Container(
-                  width: 16,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: AppColors.badgeRed,
-                    shape: BoxShape.circle,
+          Expanded(
+            child: posts.isEmpty
+                ? _Fill(
+                    child: EmptyView(
+                      icon: Icons.article_outlined,
+                      title: 'Aucune publication',
+                      subtitle:
+                          'Le fil est vide pour le moment. Soyez la '
+                          'première personne à partager quelque chose.',
+                      action: CustomButton(
+                        text: 'Publier',
+                        width: 180,
+                        height: 44,
+                        borderRadius: 22,
+                        onPressed: () => context.pushNamed('create-post'),
+                      ),
+                    ),
+                  )
+                : Center(
+                    // Gouttière explicite plutôt qu'`AppPage` : celui-ci
+                    // n'applique sa marge horizontale que si
+                    // `MediaQuery.sizeOf(context).width < 600`, or ce chiffre
+                    // ne reflète pas toujours la fenêtre réellement rendue
+                    // (mesuré à 800 px pour une surface de 390 px). Le fil
+                    // dépend donc de rien d'autre que ses propres gouttières,
+                    // identiques et constantes sur téléphone.
+                      // Sur écran large, la colonne reste lisible mais
+                      // plafonnée ; sur téléphone, la contrainte est sans
+                      // effet car la fenêtre est plus étroite.
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: ContentWidth.feed,
+                        ),
+                        child: ListView(
+                          // 12 px de gouttière gauche et droite pour toutes
+                          // les cartes, 10 px de départ, puis 80 px pour que
+                          // la dernière publication ne repose jamais sous la
+                          // barre de navigation inférieure (52 px + marge).
+                          padding: const EdgeInsets.fromLTRB(12, 10, 12, 80),
+                          children: [
+                            if (isDemoOnly) ...[
+                              const SizedBox(height: 10),
+                              const DemoNotice(
+                                message:
+                                    'Contenu de démonstration : aucun serveur '
+                                    'UADB Social n’est encore branché. Les '
+                                    'publications que vous créez sont bien '
+                                    'enregistrées sur l’appareil.',
+                              ),
+                            ],
+                            const SizedBox(height: 10),
+                            for (final post in posts) ...[
+                              PostCard(
+                                post: post,
+                                onLike: () => ref
+                                    .read(feedProvider.notifier)
+                                    .toggleLike(post.id),
+                                onShare: () => ref
+                                    .read(feedProvider.notifier)
+                                    .share(post.id),
+                              ),
+                              const SizedBox(height: 10),
+                            ],
+                            const SizedBox(height: 80),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  child: Center(
-                    child: Text('3', style: AppTextStyles.badgeText),
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildFeed() {
-    return Column(
+/// Remplit la hauteur disponible tout en restant défilable, afin qu'un écran
+/// vide occupe bien la page.
+class _Fill extends StatelessWidget {
+  const _Fill({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+            child: Row(
+              children: [
+                const Expanded(child: _BrandLogo()),
+                Stack(
+                  children: [
+                    IconButton(
+                      onPressed: () => showAppSnackBar(
+                        context,
+                        'Aucune nouvelle notification.',
+                      ),
+                      icon: const Icon(
+                        Icons.notifications_none_rounded,
+                        size: 26,
+                        color: AppColors.primaryBlue,
+                      ),
+                      tooltip: 'Notifications',
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(
+                        minWidth: 42,
+                        minHeight: 42,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(height: 2, color: AppColors.primaryBlue),
+        ],
+      ),
+    );
+  }
+}
+
+/// Logo officiel « UADB SOCIAL » de l'en-tête.
+///
+/// L'image a été rognée sur son contenu utile (ratio 4,33:1) : les marges
+/// transparentes d'origine occupaient 35 % de la largeur et 50 % de la hauteur,
+/// ce qui rendait le logo minuscule à l'écran. Le fichier est produit en
+/// 572x132, soit 3x la taille d'affichage, pour rester net sur écran dense.
+///
+/// Dimensionnement : la hauteur pilote (le logo est panoramique), et
+/// `BoxFit.contain` garantit qu'il n'est jamais déformé ni coupé.
+class _BrandLogo extends StatelessWidget {
+  const _BrandLogo();
+
+  static const String _assetPath = 'assets/branding/uadb_social_logo.png';
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 240, maxHeight: 48),
+        child: Image.asset(
+          _assetPath,
+          height: 48,
+          fit: BoxFit.contain,
+          alignment: Alignment.centerLeft,
+          errorBuilder: (context, error, stackTrace) => const _TextMark(),
+        ),
+      ),
+    );
+  }
+}
+
+/// Repli textuel, utilisé tant que l'image du logo n'est pas dans le projet.
+class _TextMark extends StatelessWidget {
+  const _TextMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        PostCard(
-          authorName: 'Aminata Diallo',
-          authorRole: 'Licence 3 Informatique',
-          timeAgo: 'Il y a 2h',
-          content:
-              'Super enthousiaste pour le hackathon UADB ce week-end ! 🚀 Qui d\'autre participe ? On va coder des solutions pour l\'agriculture locale. #HackathonUADB #Innovation',
-          imageUrl: 'https://picsum.photos/seed/hackathon/400/225',
-          likesCount: 24,
-          commentsCount: 8,
-          sharesCount: 5,
-          onLike: () {},
-          onComment: () {},
-          onShare: () {},
-          onProfileTap: () {},
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: AppColors.officialBadge,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          alignment: Alignment.center,
+          child: const Text(
+            'U',
+            style: TextStyle(
+              fontFamily: AppTextStyles.interFont,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
-        PostCard(
-          authorName: 'Direction Scolarité',
-          authorRole: 'Rectorat UADB',
-          timeAgo: 'Il y a 5h',
-          content:
-              'Communiqué officiel : Les examens du premier semestre débuteront le 15 janvier 2025. Consultez le calendrier détaillé sur le portail étudiant. Bonne préparation à tous ! 📚',
-          isOfficial: true,
-          likesCount: 142,
-          commentsCount: 12,
-          sharesCount: 28,
-          onLike: () {},
-          onComment: () {},
-          onShare: () {},
-          onProfileTap: () {},
-        ),
-        const SizedBox(height: 12),
-        PostCard(
-          authorName: 'Moussa Ndiaye',
-          authorRole: 'Master 1 Agronomie, SATA',
-          timeAgo: 'Hier',
-          content:
-              'Journée terrain à Nianing avec la promo M1 Agronomie. Analyse des sols et échange avec les paysans locaux. Expérience enrichissante ! 🌾🌱',
-          imageUrl: 'https://picsum.photos/seed/terrain/400/225',
-          likesCount: 45,
-          commentsCount: 3,
-          sharesCount: 7,
-          onLike: () {},
-          onComment: () {},
-          onShare: () {},
-          onProfileTap: () {},
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            'UADB SOCIAL',
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.headerTitle.copyWith(fontSize: 15),
+          ),
         ),
       ],
     );

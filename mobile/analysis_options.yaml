@@ -31,8 +31,31 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    # Règles de qualité ajoutées au-delà de `flutter_lints`.
+    #
+    # Le CI lance `flutter analyze` sans `--no-fatal-infos` ni
+    # `--no-fatal-warnings` : ces règles bloquent donc la merge.
+
+    # Pas de `print` résiduel.
+    avoid_print: true
+
+    # `dart:io` est interdit : l'application doit rester compilable pour le web.
+    avoid_web_libraries_in_flutter: true
+
+    # Async : évite les `Future` ignorés et les `await` inutiles.
+    unawaited_futures: true
+    avoid_void_async: true
+
+    # Constance et null-sécurité.
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_locals: true
+
+    # Nommage et lisibilité.
+    always_declare_return_types: true
+    avoid_positional_boolean_parameters: true
+    unnecessary_parenthesis: true
+    unnecessary_underscores: true
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

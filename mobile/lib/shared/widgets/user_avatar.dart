@@ -78,35 +78,3 @@ class UserAvatar extends StatelessWidget {
     return colors[hash.abs() % colors.length];
   }
 }
-
-class UserAvatarWithBorder extends StatelessWidget {
-  final String? imageUrl;
-  final String? initials;
-  final double radius;
-  final Color borderColor;
-  final double borderWidth;
-
-  const UserAvatarWithBorder({
-    super.key,
-    this.imageUrl,
-    this.initials,
-    this.radius = 20,
-    this.borderColor = AppColors.cardWhite,
-    this.borderWidth = 2,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: borderColor, width: borderWidth),
-      ),
-      child: UserAvatar(
-        imageUrl: imageUrl,
-        initials: initials,
-        radius: radius - borderWidth,
-      ),
-    );
-  }
-}

@@ -1,19 +1,20 @@
 import 'dart:io';
+
 import 'package:image/image.dart';
 
 void main() {
-  final width = 1024;
-  final height = 1024;
-  
+  const width = 1024;
+  const height = 1024;
+
   final image = Image(width: width, height: height);
-  
+
   // Primary blue color
   final primaryColor = ColorRgb8(0x0B, 0x4F, 0xA2);
   final whiteColor = ColorRgb8(0xFF, 0xFF, 0xFF);
-  
+
   // Fill with primary color
   fill(image, color: primaryColor);
-  
+
   // Draw a circle background
   drawCircle(
     image,
@@ -22,13 +23,13 @@ void main() {
     radius: width ~/ 2 - 20,
     color: primaryColor,
   );
-  
+
   // Draw "U" shape (left)
-  final centerX = width ~/ 2;
-  final centerY = height ~/ 2;
-  final letterSize = 200;
-  final strokeWidth = 40;
-  
+  const centerX = width ~/ 2;
+  const centerY = height ~/ 2;
+  const letterSize = 200;
+  const strokeWidth = 40;
+
   // Draw "U" - left vertical bar
   drawRect(
     image,
@@ -38,7 +39,7 @@ void main() {
     y2: centerY + letterSize,
     color: whiteColor,
   );
-  
+
   // Draw "U" - bottom curve (approximated with rect)
   drawRect(
     image,
@@ -48,7 +49,7 @@ void main() {
     y2: centerY + letterSize,
     color: whiteColor,
   );
-  
+
   // Draw "U" - right vertical bar
   drawRect(
     image,
@@ -58,14 +59,14 @@ void main() {
     y2: centerY + letterSize,
     color: whiteColor,
   );
-  
+
   // Draw "S" - simplified as three horizontal bars with connections
-  final sX = centerX + 20;
-  final sY = centerY;
-  final sWidth = letterSize;
-  final sHeight = letterSize * 2;
-  final barHeight = strokeWidth;
-  
+  const sX = centerX + 20;
+  const sY = centerY;
+  const sWidth = letterSize;
+  const sHeight = letterSize * 2;
+  const barHeight = strokeWidth;
+
   // Top bar
   drawRect(
     image,
@@ -75,7 +76,7 @@ void main() {
     y2: sY - sHeight + barHeight,
     color: whiteColor,
   );
-  
+
   // Middle bar
   drawRect(
     image,
@@ -85,7 +86,7 @@ void main() {
     y2: sY + barHeight ~/ 2,
     color: whiteColor,
   );
-  
+
   // Bottom bar
   drawRect(
     image,
@@ -95,7 +96,7 @@ void main() {
     y2: sY + sHeight,
     color: whiteColor,
   );
-  
+
   // Left connectors for S
   drawRect(
     image,
@@ -105,7 +106,7 @@ void main() {
     y2: sY,
     color: whiteColor,
   );
-  
+
   drawRect(
     image,
     x1: sX,
@@ -114,10 +115,10 @@ void main() {
     y2: sY + sHeight,
     color: whiteColor,
   );
-  
+
   // Save
   final pngBytes = encodePng(image);
   final file = File('assets/icon/icon.png');
   file.writeAsBytesSync(pngBytes);
-  print('Icon generated: ${file.path} (${pngBytes.length} bytes)');
+  stderr.writeln('Icon generated: ${file.path} (${pngBytes.length} bytes)');
 }
