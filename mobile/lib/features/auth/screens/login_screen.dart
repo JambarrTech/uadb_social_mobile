@@ -91,6 +91,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 12),
                 CustomButton(
                   text: 'Se connecter',
+                  // Pleine largeur explicite (le thème ne force plus la
+                  // largeur minimale, voir `app_theme.dart`).
+                  width: double.infinity,
                   isLoading: busy,
                   onPressed: busy ? null : _handleLogin,
                   height: 52,

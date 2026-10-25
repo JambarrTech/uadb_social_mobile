@@ -104,14 +104,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text('Rejoignez le réseau social universitaire de l\'UADB'),
+                const Text(
+                  'Rejoignez le réseau social universitaire de l\'UADB',
+                ),
                 const SizedBox(height: 28),
 
                 if (auth.errorMessage != null)
                   InlineErrorBanner(message: auth.errorMessage!),
                 if (_showLocalError && !_acceptedTerms)
                   const InlineErrorBanner(
-                    message: 'Vous devez accepter les conditions d’utilisation.',
+                    message:
+                        'Vous devez accepter les conditions d’utilisation.',
                   ),
 
                 _field(
@@ -177,6 +180,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 const SizedBox(height: 20),
                 CustomButton(
                   text: 'Créer mon compte',
+                  // Pleine largeur explicite (le thème ne force plus la
+                  // largeur minimale, voir `app_theme.dart`).
+                  width: double.infinity,
                   isLoading: busy,
                   onPressed: busy ? null : _handleRegister,
                   backgroundColor: AppColors.green,
@@ -238,8 +244,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     ),
   );
 
-  static String? Function(String?) _required(String field) => (value) =>
-      (value == null || value.trim().isEmpty) ? 'Champ requis' : null;
+  static String? Function(String?) _required(String field) =>
+      (value) =>
+          (value == null || value.trim().isEmpty) ? 'Champ requis' : null;
 
   static String? _emailValidator(String? value) {
     final email = value?.trim() ?? '';
@@ -284,8 +291,11 @@ class _DepartmentDropdown extends StatelessWidget {
       child: DropdownButtonFormField<String>(
         initialValue: value,
         isExpanded: true,
-        onChanged: enabled ? (v) => v == null || v == value ? null : onChanged(v) : null,
-        validator: (v) => (v == null || v == _RegisterScreenState._departmentPlaceholder)
+        onChanged: enabled
+            ? (v) => v == null || v == value ? null : onChanged(v)
+            : null,
+        validator: (v) =>
+            (v == null || v == _RegisterScreenState._departmentPlaceholder)
             ? 'Champ requis'
             : null,
         decoration: InputDecoration(

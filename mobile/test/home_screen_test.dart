@@ -1,5 +1,6 @@
 /// Contrôle de l'écran d'accueil sur les largeurs cibles de la maquette.
 library;
+
 // Le fil est vérifié à 360, 390 et 412 px — les trois largeurs imposées par
 // la maquette — parce que la barre d'actions du composeur (« Photo »,
 // « Vidéo », « Événement » + « Publier ») est l'endroit le plus serré de
@@ -62,8 +63,15 @@ void main() {
   }
 
   /// Fait défiler le fil jusqu'à ce qu'il n'ait plus de défilement possible.
+  ///
+  /// Le fil est le seul `[ListView]` de l'écran : on cible son `[Scrollable]`
+  /// explicitement pour ne pas tomber sur le `Scrollable` horizontal du champ
+  /// du composeur, lecture seule mais défilable lui aussi.
   Future<void> scrollToEnd(WidgetTester tester) async {
-    final scrollable = find.byType(Scrollable);
+    final scrollable = find.descendant(
+      of: find.byType(ListView),
+      matching: find.byType(Scrollable),
+    );
     for (var i = 0; i < 60; i++) {
       final position = tester.state<ScrollableState>(scrollable).position;
       final before = position.pixels;
@@ -121,16 +129,19 @@ void main() {
       final composerAvatarLeft = tester
           .getTopLeft(find.byType(UserAvatar).first)
           .dx;
-      final cardAvatarLeft = tester.getTopLeft(
-        find.descendant(
-          of: find.byType(PostCard).first,
-          matching: find.byType(UserAvatar),
-        ),
-      ).dx;
+      final cardAvatarLeft = tester
+          .getTopLeft(
+            find.descendant(
+              of: find.byType(PostCard).first,
+              matching: find.byType(UserAvatar),
+            ),
+          )
+          .dx;
       expect(
         cardAvatarLeft,
         closeTo(composerAvatarLeft, 1.0),
-        reason: 'composeur et publications doivent être alignés sur une '
+        reason:
+            'composeur et publications doivent être alignés sur une '
             'même grille gauche',
       );
 
@@ -151,7 +162,12 @@ void main() {
         'Moussa Ndiaye',
       ];
       final seen = <String>{};
-      final scrollable = find.byType(Scrollable);
+      final scrollable = find.descendant(
+        // Cibler le fil (seul `ListView`) et non le `Scrollable` horizontal
+        // du champ du composeur.
+        of: find.byType(ListView),
+        matching: find.byType(Scrollable),
+      );
 
       for (var i = 0; i < 60 && seen.length < authors.length; i++) {
         for (final author in authors) {

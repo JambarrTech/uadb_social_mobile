@@ -212,9 +212,16 @@ class _Header extends StatelessWidget {
             style: AppTextStyles.createPostTitle,
           ),
           const Spacer(),
+          // Largeur bornée à dessein : le header est une `Row` avec deux
+          // `Spacer`, or une `Row` mesure ses enfants non flex en largeur
+          // infinie ; sans largeur fixe, le style du bouton traiterait
+          // `minWidth = ∞` comme strict (crash constaté sur appareil,
+          // voir `app_theme.dart`). 100 px accueillent « Publier »
+          // (~57 px en 16 px) + padding horizontal 36 px.
           CustomButton(
             text: 'Publier',
             onPressed: canSubmit ? onPublish : null,
+            width: 100,
             height: 36,
             padding: const EdgeInsets.symmetric(horizontal: 18),
             borderRadius: 18,

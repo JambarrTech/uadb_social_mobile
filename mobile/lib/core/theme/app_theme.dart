@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'app_colors.dart';
 import 'app_text_styles.dart';
 
@@ -27,7 +28,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         hintStyle: AppTextStyles.fieldPlaceholder,
         labelStyle: AppTextStyles.fieldLabel,
         border: OutlineInputBorder(
@@ -51,7 +55,16 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryBlue,
           foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 52),
+          // `Size(double.infinity, h)` force `minWidth = ∞` : dès qu'un
+          // bouton est mesuré dans une largeur non bornée (p. ex. une
+          // `Row` avec des `Spacer`, qui mesure ses enfants non flex en
+          // largeur infinie), la contrainte devient strictement invalide
+          // (« BoxConstraints forces an infinite width » — constaté en
+          // réel sur l'en-tête de l'écran de création). `Size.fromHeight`
+          // garde la hauteur minimale sans miner la largeur ; l'occupation
+          // toute largeur est demandée par les écrans via
+          // `CustomButton(width: double.infinity)`.
+          minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -82,9 +95,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: AppColors.cardWhite,
         elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: EdgeInsets.zero,
       ),
     );

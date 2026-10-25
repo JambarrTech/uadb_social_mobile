@@ -132,6 +132,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           const SizedBox(height: 28),
           CustomButton(
             text: 'Envoyer le lien',
+            // Pleine largeur explicite : le thème ne mentionne plus
+            // `minimumSize` en largeur (voir `app_theme.dart`).
+            width: double.infinity,
             isLoading: busy,
             onPressed: busy ? null : _handleSubmit,
             height: 52,
@@ -190,6 +193,8 @@ class _Confirmation extends StatelessWidget {
         const SizedBox(height: 32),
         CustomButton(
           text: 'Retour à la connexion',
+          // Pleine largeur explicite (le thème ne force plus la largeur).
+          width: double.infinity,
           onPressed: () => context.goNamed('login'),
           height: 50,
         ),
