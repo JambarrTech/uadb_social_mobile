@@ -12,6 +12,7 @@ import '../../../shared/widgets/post_composer_card.dart';
 import '../../../shared/widgets/responsive.dart';
 import '../../auth/state/auth_controller.dart';
 import '../../feed/state/feed_controller.dart';
+import '../../feed/state/saved_posts_controller.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,7 @@ class HomeScreen extends ConsumerWidget {
     final posts = ref.watch(feedProvider);
     final user = ref.watch(currentUserProvider);
     final isDemoOnly = ref.watch(feedProvider.notifier).isDemoOnly;
+    final savedIds = ref.watch(savedIdsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundAuth,
@@ -89,46 +91,51 @@ class HomeScreen extends ConsumerWidget {
                     // (mesuré à 800 px pour une surface de 390 px). Le fil
                     // dépend donc de rien d'autre que ses propres gouttières,
                     // identiques et constantes sur téléphone.
-                      // Sur écran large, la colonne reste lisible mais
-                      // plafonnée ; sur téléphone, la contrainte est sans
-                      // effet car la fenêtre est plus étroite.
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth: ContentWidth.feed,
-                        ),
-                        child: ListView(
-                          // 12 px de gouttière gauche et droite pour toutes
-                          // les cartes, 10 px de départ, puis 80 px pour que
-                          // la dernière publication ne repose jamais sous la
-                          // barre de navigation inférieure (52 px + marge).
-                          padding: const EdgeInsets.fromLTRB(12, 10, 12, 80),
-                          children: [
-                            if (isDemoOnly) ...[
-                              const SizedBox(height: 10),
-                              const DemoNotice(
-                                message:
-                                    'Contenu de démonstration : aucun serveur '
-                                    'UADB Social n’est encore branché. Les '
-                                    'publications que vous créez sont bien '
-                                    'enregistrées sur l’appareil.',
-                              ),
-                            ],
+                    // Sur écran large, la colonne reste lisible mais
+                    // plafonnée ; sur téléphone, la contrainte est sans
+                    // effet car la fenêtre est plus étroite.
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: ContentWidth.feed,
+                      ),
+                      child: ListView(
+                        // 12 px de gouttière gauche et droite pour toutes
+                        // les cartes, 10 px de départ, puis 80 px pour que
+                        // la dernière publication ne repose jamais sous la
+                        // barre de navigation inférieure (52 px + marge).
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 80),
+                        children: [
+                          if (isDemoOnly) ...[
                             const SizedBox(height: 10),
-                            for (final post in posts) ...[
-                              PostCard(
-                                post: post,
-                                onLike: () => ref
-                                    .read(feedProvider.notifier)
-                                    .toggleLike(post.id),
-                                onShare: () => ref
-                                    .read(feedProvider.notifier)
-                                    .share(post.id),
-                              ),
-                              const SizedBox(height: 10),
-                            ],
-                            const SizedBox(height: 80),
+                            const DemoNotice(
+                              message:
+                                  'Contenu de démonstration : aucun serveur '
+                                  'UADB Social n’est encore branché. Les '
+                                  'publications que vous créez sont bien '
+                                  'enregistrées sur l’appareil.',
+                            ),
                           ],
-                        ),
+                          const SizedBox(height: 10),
+                          for (final post in posts) ...[
+                            PostCard(
+                              post: post,
+                              onLike: () => ref
+                                  .read(feedProvider.notifier)
+                                  .toggleLike(post.id),
+                              onShare: () => ref
+                                  .read(feedProvider.notifier)
+                                  .share(post.id),
+                              // Favoris : état lu dans le contrôleur
+                              // persistant, bascule confiée à la carte.
+                              isSaved: savedIds.contains(post.id),
+                              onToggleSave: () => ref
+                                  .read(savedIdsProvider.notifier)
+                                  .toggle(post.id),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          const SizedBox(height: 80),
+                        ],
                       ),
                     ),
                   ),

@@ -108,14 +108,16 @@ void main() {
 
     test('n’est plus « démo uniquement » dès qu’on publie', () {
       final container = buildContainer();
-      container.read(feedProvider.notifier).add(
-        const Post(
-          id: 'p-mine',
-          authorId: 'u1',
-          authorName: 'Moi',
-          content: 'Ma publication',
-        ),
-      );
+      container
+          .read(feedProvider.notifier)
+          .add(
+            const Post(
+              id: 'p-mine',
+              authorId: 'u1',
+              authorName: 'Moi',
+              content: 'Ma publication',
+            ),
+          );
 
       expect(container.read(feedProvider.notifier).isDemoOnly, isFalse);
     });
@@ -124,14 +126,16 @@ void main() {
       final container = buildContainer();
       final before = container.read(feedProvider).length;
 
-      container.read(feedProvider.notifier).add(
-        const Post(
-          id: 'p-mine',
-          authorId: 'u1',
-          authorName: 'Moi',
-          content: 'Ma publication',
-        ),
-      );
+      container
+          .read(feedProvider.notifier)
+          .add(
+            const Post(
+              id: 'p-mine',
+              authorId: 'u1',
+              authorName: 'Moi',
+              content: 'Ma publication',
+            ),
+          );
 
       final posts = container.read(feedProvider);
       expect(posts.length, before + 1);
@@ -140,14 +144,16 @@ void main() {
 
     test('la publication est persistée et relue après relance', () {
       final container = buildContainer();
-      container.read(feedProvider.notifier).add(
-        const Post(
-          id: 'p-mine',
-          authorId: 'u1',
-          authorName: 'Moi',
-          content: 'Ma publication',
-        ),
-      );
+      container
+          .read(feedProvider.notifier)
+          .add(
+            const Post(
+              id: 'p-mine',
+              authorId: 'u1',
+              authorName: 'Moi',
+              content: 'Ma publication',
+            ),
+          );
 
       // Nouveau conteneur, même stockage : la publication doit être là.
       final reopened = buildContainer();
@@ -156,8 +162,18 @@ void main() {
 
     test('toggleLike incrémente puis décrémente', () {
       final container = buildContainer();
-      final id = container.read(feedProvider).first.id;
-      final initial = container.read(feedProvider).first.likesCount;
+      // La première publication de démonstration est déjà aimée (cœur rouge
+      // de la maquette de référence) : la bascule est vérifiée sur une
+      // publication non aimée, pour partir de l'état normal.
+      final id = container
+          .read(feedProvider)
+          .where((post) => !post.likedByMe)
+          .first
+          .id;
+      final initial = container
+          .read(feedProvider)
+          .firstWhere((p) => p.id == id)
+          .likesCount;
 
       container.read(feedProvider.notifier).toggleLike(id);
       final liked = container.read(feedProvider).firstWhere((p) => p.id == id);
@@ -165,19 +181,30 @@ void main() {
       expect(liked.likesCount, initial + 1);
 
       container.read(feedProvider.notifier).toggleLike(id);
-      final unliked = container.read(feedProvider).firstWhere((p) => p.id == id);
+      final unliked = container
+          .read(feedProvider)
+          .firstWhere((p) => p.id == id);
       expect(unliked.likedByMe, isFalse);
       expect(unliked.likesCount, initial);
     });
 
     test('le like survit à une relance', () {
       final container = buildContainer();
-      final id = container.read(feedProvider).first.id;
+      // Même ciblage que ci-dessus : la première publication est déjà aimée
+      // dans le contenu de démonstration.
+      final id = container
+          .read(feedProvider)
+          .where((post) => !post.likedByMe)
+          .first
+          .id;
 
       container.read(feedProvider.notifier).toggleLike(id);
 
       final reopened = buildContainer();
-      expect(reopened.read(feedProvider).firstWhere((p) => p.id == id).likedByMe, isTrue);
+      expect(
+        reopened.read(feedProvider).firstWhere((p) => p.id == id).likedByMe,
+        isTrue,
+      );
     });
 
     test('share incrémente le compteur de partage', () {
@@ -210,14 +237,16 @@ void main() {
 
     test('resetToDemo repart du contenu initial', () {
       final container = buildContainer();
-      container.read(feedProvider.notifier).add(
-        const Post(
-          id: 'p-mine',
-          authorId: 'u1',
-          authorName: 'Moi',
-          content: 'Ma publication',
-        ),
-      );
+      container
+          .read(feedProvider.notifier)
+          .add(
+            const Post(
+              id: 'p-mine',
+              authorId: 'u1',
+              authorName: 'Moi',
+              content: 'Ma publication',
+            ),
+          );
 
       container.read(feedProvider.notifier).resetToDemo();
 

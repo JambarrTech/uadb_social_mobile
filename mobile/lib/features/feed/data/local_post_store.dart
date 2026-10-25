@@ -94,15 +94,19 @@ List<Post> demoFeed(DateTime now) => [
     id: 'demo-aminata',
     authorId: 'demo-aminata',
     authorName: 'Aminata Diallo',
-    authorRole: 'Master 2 Informatique',
+    // Reproduction de la capture de référence : « Licence 3 Informat... ».
+    authorRole: 'Licence 3 Informatique',
     createdAt: now.subtract(const Duration(hours: 2)),
     content:
-        'Félicitations à l’équipe de l’UADB qui a décroché la première place '
-        'du hackathon inter-universitaire ! Une belle vitrine du talent de '
-        'nos étudiants.',
+        'Félicitations à toute l’équipe de l’UADB qui a remporté le deuxième '
+        'prix au hackathon de Dakar ! Notre application d’irrigation '
+        'intelligente pour Bambey a séduit le jury. 🎉🚜',
     imageUrls: const ['assets/demo_event.jpg', 'assets/demo_solar.jpg'],
-    likesCount: 47,
-    commentsCount: 12,
+    // La capture affiche un cœur rouge avec « 24 » et « 8 » : la
+    // publication est aimée et le compteur vient des données, là aussi.
+    likedByMe: true,
+    likesCount: 24,
+    commentsCount: 8,
     sharesCount: 6,
   ),
   Post(
