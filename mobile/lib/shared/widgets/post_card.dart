@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'demo_notice.dart';
 import 'image_viewer.dart';
+import 'post_image.dart';
 import 'user_avatar.dart';
 
 /// Carte d'une publication.
@@ -292,6 +293,9 @@ class _Header extends StatelessWidget {
                     ],
                   ],
                 ),
+                // Un filet d'air sépare le nom des informations
+                // secondaires : à 13/10 px collés, le bloc paraît serré.
+                const SizedBox(height: 2),
                 Text(
                   role.isEmpty ? post.timeAgo() : '$role · ${post.timeAgo()}',
                   overflow: TextOverflow.ellipsis,
@@ -459,48 +463,13 @@ class _ImageGallery extends StatelessWidget {
     );
   }
 
-  /// Rend l'image d'une publication.
-  ///
-  /// Les photos de démonstration sont embarquées dans les assets (chemins
-  /// `assets/…`) pour que le fil reste illustré hors ligne ; les publications
-  /// réelles, elles, portent des URL distantes. On distingue les deux sans
-  /// modifier le modèle : un chemin asset ne contient jamais de schéma
-  /// `http(s)`, donc il est impossible de confondre les deux cas. En cas
-  /// d'échec de chargement, un repli neutralise l'erreur sans casser la
-  /// mise en page.
-  Widget _image(String url, double height) {
-    if (_isAssetPath(url)) {
-      return Image.asset(
-        url,
-        height: height,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _imageFallback(height),
-      );
-    }
-    return Image.network(
-      url,
-      height: height,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => _imageFallback(height),
-      loadingBuilder: (context, child, progress) => progress == null
-          ? child
-          : Container(height: height, color: AppColors.borderSeparator),
-    );
-  }
-
-  static bool _isAssetPath(String url) =>
-      !url.startsWith('http://') && !url.startsWith('https://');
-
-  Widget _imageFallback(double height) => Container(
-    height: height,
-    color: AppColors.borderSeparator,
-    child: const Icon(
-      Icons.image_not_supported_outlined,
-      color: AppColors.textMuted,
-    ),
-  );
+  /// Rend l'image d'une publication, quelle que soit son origine : asset
+  /// embarqué pour le contenu de démonstration, URL distante pour les
+  /// publications réelles, fichier local pour les photos choisies dans
+  /// l'app (voir [PostImage]). En cas d'échec de chargement, un repli
+  /// neutralise l'erreur sans casser la mise en page.
+  Widget _image(String url, double height) =>
+      PostImage(url: url, height: height, width: double.infinity);
 }
 
 /// 4 — Barre d'actions : J'aime, Commenter, Partager, puis Enregistrer à

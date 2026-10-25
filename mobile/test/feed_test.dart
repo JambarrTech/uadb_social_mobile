@@ -261,4 +261,71 @@ void main() {
       expect(container.read(feedProvider), isA<List<Post>>());
     });
   });
+
+  // Un appareil ayant déjà lancé une version antérieure conserve ses
+  // publications démo de l'époque (anciennement sans images). Sans
+  // migration, la nouvelle maquette ne s'afficherait jamais après mise à
+  // jour de l'app : c'est le bug « anciennes publications sans images ».
+  group('migration du contenu de démonstration', () {
+    test(
+      'remplace les démos périmées et conserve les publications utilisateur',
+      () async {
+        final postsStore = LocalPostStore(store.preferences);
+        await postsStore.writeAll([
+          const Post(
+            id: 'demo-old',
+            authorId: 'u9',
+            authorName: 'Ancienne démo',
+            content: 'Texte d’une version précédente',
+          ),
+          const Post(
+            id: 'p-mine',
+            authorId: 'u1',
+            authorName: 'Moi',
+            content: 'Ma publication',
+          ),
+        ]);
+        // Version du schéma précédant la version actuelle : l'appareil a
+        // été mis à jour mais ses données datent de l'ancienne démo.
+        await postsStore.writeSchemaVersion(1);
+
+        final container = buildContainer();
+        final posts = container.read(feedProvider);
+
+        expect(posts.any((post) => post.id == 'demo-old'), isFalse);
+        expect(posts.any((post) => post.id.startsWith('demo-')), isTrue);
+        expect(
+          posts.any((post) => post.id == 'p-mine'),
+          isTrue,
+          reason: 'les publications de l’utilisateur ne sont jamais perdues',
+        );
+
+        // La version persistée est relevée : la migration ne doit pas être
+        // rejouée à chaque lancement.
+        expect(postsStore.readSchemaVersion(), LocalPostStore.schemaVersion);
+      },
+    );
+
+    test('ne réamorce pas la démo quand le schéma est à jour', () async {
+      final postsStore = LocalPostStore(store.preferences);
+      await postsStore.writeSchemaVersion(LocalPostStore.schemaVersion);
+      await postsStore.writeAll([
+        const Post(
+          id: 'p-mine',
+          authorId: 'u1',
+          authorName: 'Moi',
+          content: 'Ma publication',
+        ),
+      ]);
+
+      final container = buildContainer();
+      final posts = container.read(feedProvider);
+
+      expect(
+        posts.single.id,
+        'p-mine',
+        reason: 'des données à jour ne subissent aucun réamorçage',
+      );
+    });
+  });
 }

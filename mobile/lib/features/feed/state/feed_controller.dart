@@ -18,10 +18,29 @@ class FeedController extends Notifier<List<Post>> {
   List<Post> build() {
     final store = ref.watch(localPostStoreProvider);
     final stored = store.readAll();
+
+    // Migration : si le contenu de démonstration a changé depuis la
+    // dernière exécution de l'app (cf. [LocalPostStore.schemaVersion]),
+    // les publications de démonstration stockées sont remplacées par la
+    // version récente. Sans cela, l'appareil afficherait indéfiniment
+    // l'ancien fil — sans image, avec l'ancien texte — même après mise à
+    // jour. Les publications créées par l'utilisateur sont conservées.
+    if (store.readSchemaVersion() < LocalPostStore.schemaVersion) {
+      final userPosts = [
+        for (final post in stored)
+          if (!post.id.startsWith('demo-')) post,
+      ];
+      final migrated = [...demoFeed(DateTime.now()), ...userPosts];
+      store.writeAll(migrated);
+      store.writeSchemaVersion(LocalPostStore.schemaVersion);
+      return migrated;
+    }
+
     if (stored.isNotEmpty) return stored;
 
     final seeded = demoFeed(DateTime.now());
     store.writeAll(seeded);
+    store.writeSchemaVersion(LocalPostStore.schemaVersion);
     return seeded;
   }
 
@@ -52,7 +71,8 @@ class FeedController extends Notifier<List<Post>> {
   void share(String postId) {
     state = [
       for (final post in state)
-        if (post.id == postId) post.copyWith(sharesCount: post.sharesCount + 1)
+        if (post.id == postId)
+          post.copyWith(sharesCount: post.sharesCount + 1)
         else
           post,
     ];

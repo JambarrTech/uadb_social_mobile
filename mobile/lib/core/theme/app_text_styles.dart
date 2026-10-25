@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'app_colors.dart';
 
 class AppTextStyles {
@@ -163,10 +164,13 @@ class AppTextStyles {
     height: 1.4,
   );
 
+  // Compteur d'interactions (« 24 ») : police du corps de texte, un
+  // cran en dessous des libellés, demi-grasse — chiffres discrets et
+  // lisibles, en ligne avec les icônes de la barre d'actions.
   static const TextStyle interactionCount = TextStyle(
-    fontFamily: jetbrainsMonoFont,
+    fontFamily: figtreeFont,
     fontSize: 11,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     color: AppColors.textMedium,
   );
 

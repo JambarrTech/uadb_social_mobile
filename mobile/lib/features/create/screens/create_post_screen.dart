@@ -9,6 +9,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/custom_button.dart';
 import '../../../shared/widgets/demo_notice.dart';
 import '../../../shared/widgets/inline_error_banner.dart';
+import '../../../shared/widgets/post_image.dart';
 import '../../../shared/widgets/responsive.dart';
 import '../../../shared/widgets/user_avatar.dart';
 import '../../auth/state/auth_controller.dart';
@@ -365,21 +366,10 @@ class _ImageStrip extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                images[index].path,
-                width: 96,
-                height: 96,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: 96,
-                  height: 96,
-                  color: AppColors.borderSeparator,
-                  child: const Icon(
-                    Icons.image_not_supported_outlined,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
+              // Les aperçus choisis sont des chemins de fichier locaux :
+              // en Image.network ils ne se chargeaient jamais, d'où un
+              // aperçu systématiquement tombé en repli (gris + icône).
+              child: PostImage(url: images[index].path, width: 96, height: 96),
             ),
             Positioned(
               top: -6,

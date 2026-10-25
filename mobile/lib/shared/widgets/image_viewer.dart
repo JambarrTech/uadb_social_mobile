@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
+import 'post_image.dart';
 
 /// Visionneuse plein écran des images d'une publication.
 ///
@@ -71,7 +71,12 @@ class _ImageViewerPageState extends State<_ImageViewerPage> {
                   panEnabled: false,
                   minScale: 1,
                   maxScale: 4,
-                  child: Center(child: _Image(url: widget.urls[index])),
+                  child: Center(
+                    child: PostImage(
+                      url: widget.urls[index],
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -82,6 +87,10 @@ class _ImageViewerPageState extends State<_ImageViewerPage> {
   }
 }
 
+/// La feuille est affichée à la demande : chaque image est rendue par
+/// [PostImage] (Zoom et panoramique assurés par l'[InteractiveViewer]
+/// ; `BoxFit.contain` pour que l'image reste entièrement visible).
+///
 /// Barre supérieure : compteur de position + bouton de fermeture.
 class _Toolbar extends StatelessWidget {
   const _Toolbar({required this.title});
@@ -108,75 +117,6 @@ class _Toolbar extends StatelessWidget {
           icon: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
           padding: const EdgeInsets.all(12),
           constraints: const BoxConstraints(minWidth: 46, minHeight: 46),
-        ),
-      ],
-    );
-  }
-}
-
-/// Image en plein écran, adaptée au ratio de l'écran.
-///
-/// `BoxFit.contain` : l'image est entièrement visible, sans rognage, la
-/// visionneuse servant à l'inspecter et non à l'enchâsser dans la carte.
-/// Zoom et panoramique sont assurés par l'[InteractiveViewer] parent.
-class _Image extends StatelessWidget {
-  const _Image({required this.url});
-
-  final String url;
-
-  static bool _isAssetPath(String url) =>
-      !url.startsWith('http://') && !url.startsWith('https://');
-
-  @override
-  Widget build(BuildContext context) {
-    return _isAssetPath(url)
-        ? Image.asset(url, fit: BoxFit.contain)
-        : Image.network(
-            url,
-            fit: BoxFit.contain,
-            loadingBuilder: (context, child, progress) =>
-                progress == null ? child : _LoadingPlaceholder(),
-            errorBuilder: (context, error, stackTrace) =>
-                const _ErrorPlaceholder(),
-          );
-  }
-}
-
-/// Chargement en cours, discret sur fond noir.
-class _LoadingPlaceholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: SizedBox(
-        width: 32,
-        height: 32,
-        child: CircularProgressIndicator(
-          color: AppColors.primaryBlue,
-          strokeWidth: 3,
-        ),
-      ),
-    );
-  }
-}
-
-/// Repli quand l'image est inaccessible : la mise en page reste intacte.
-class _ErrorPlaceholder extends StatelessWidget {
-  const _ErrorPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.image_not_supported_outlined,
-          color: Colors.white38,
-          size: 48,
-        ),
-        SizedBox(height: 12),
-        Text(
-          'Image indisponible',
-          style: TextStyle(color: Colors.white54, fontSize: 13),
         ),
       ],
     );

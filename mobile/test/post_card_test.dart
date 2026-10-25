@@ -436,6 +436,48 @@ void main() {
     });
   });
 
+  // Les publications créées dans l'app portent des chemins de fichiers
+  // locaux (photos choisies via le picker), pas des URL : la galerie doit
+  // les lire comme des fichiers, faute de quoi la carte tombait en repli
+  // et paraissait « sans images ».
+  group('photos choisies sur l’appareil', () {
+    testWidgets(
+      'un chemin de fichier local s’affiche via Image.file, sans débordement',
+      (tester) async {
+        await pumpCard(
+          tester,
+          _basePost(images: ['/data/user/0/com.example.app/cache/photo.jpg']),
+        );
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) => widget is Image && widget.image is FileImage,
+          ),
+          findsOneWidget,
+          reason:
+              'le chemin local doit être chargé comme un fichier, '
+              'pas comme un asset ni une URL réseau',
+        );
+        expect(drainExceptions(tester), isEmpty);
+      },
+    );
+
+    testWidgets('la visionneuse s’ouvre aussi sur un fichier local', (
+      tester,
+    ) async {
+      await pumpCard(
+        tester,
+        _basePost(images: ['/data/user/0/com.example.app/cache/photo.jpg']),
+      );
+
+      await tester.tap(find.byType(Image).first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PageView), findsOneWidget);
+      expect(drainExceptions(tester), isEmpty);
+    });
+  });
+
   // La publication de démonstration doit reproduire la capture de
   // référence : si quelqu'un en change, le test le signale et impose
   // de vérifier l'impact visuel sur l'accueil.

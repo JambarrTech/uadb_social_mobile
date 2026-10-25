@@ -15,6 +15,24 @@ class LocalPostStore {
 
   static const String storageKey = 'posts.local';
 
+  /// Version du contenu de démonstration embarqué.
+  ///
+  /// Un appareil qui a déjà lancé l'app conserve ses publications en
+  /// mémoire ; sans ce compteur, une mise à jour de l'app (nouveau texte
+  /// de démonstration, nouvelles images) ne remplacerait jamais les
+  /// vieilles publications démo — c'est ce qui faisait s'afficher l'ancien
+  /// fil après chaque évolution. Incrémenter cette constante déclenche le
+  /// remplacement des démos côté [FeedController], en préservant tout ce
+  /// que l'utilisateur a publié lui-même.
+  static const int schemaVersion = 2;
+
+  static const String versionKey = 'posts.schema_version';
+
+  int readSchemaVersion() => _prefs.getInt(versionKey) ?? 0;
+
+  Future<void> writeSchemaVersion(int value) =>
+      _prefs.setInt(versionKey, value);
+
   List<Post> readAll() {
     final raw = _prefs.getString(storageKey);
     if (raw == null || raw.isEmpty) return [];
