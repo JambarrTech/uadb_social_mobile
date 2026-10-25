@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/models/post.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/post_card.dart';
 import '../../../shared/widgets/responsive.dart';
 import '../../../shared/widgets/user_avatar.dart';
+import '../../feed/state/feed_controller.dart';
+import '../../feed/state/saved_posts_controller.dart';
 
 /// Contenus mis en avant.
 ///
@@ -18,10 +23,16 @@ class ExploreEntry {
 }
 
 const List<ExploreEntry> _trending = [
-  ExploreEntry(title: 'Rentrée universitaire 2026', subtitle: '1,2 k publications'),
+  ExploreEntry(
+    title: 'Rentrée universitaire 2026',
+    subtitle: '1,2 k publications',
+  ),
   ExploreEntry(title: 'Clubs et associations', subtitle: 'Rejoignez un groupe'),
   ExploreEntry(title: 'Examens et emplois', subtitle: 'Session de rattrapage'),
-  ExploreEntry(title: 'Campus et bibliothèque', subtitle: 'Horaires et espaces'),
+  ExploreEntry(
+    title: 'Campus et bibliothèque',
+    subtitle: 'Horaires et espaces',
+  ),
 ];
 
 const List<ExploreEntry> _communities = [
@@ -41,14 +52,14 @@ const List<ExploreEntry> _events = [
   ),
 ];
 
-class ExplorerScreen extends StatefulWidget {
+class ExplorerScreen extends ConsumerStatefulWidget {
   const ExplorerScreen({super.key});
 
   @override
-  State<ExplorerScreen> createState() => _ExplorerScreenState();
+  ConsumerState<ExplorerScreen> createState() => _ExplorerScreenState();
 }
 
-class _ExplorerScreenState extends State<ExplorerScreen> {
+class _ExplorerScreenState extends ConsumerState<ExplorerScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
@@ -72,17 +83,34 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
   void _onSearchChanged(String value) =>
       setState(() => _query = value.trim().toLowerCase());
 
+  /// Publications du fil dont le texte ou l'auteur correspond à la requête.
+  ///
+  /// La recherche porte sur les données réelles du fil ([feedProvider]) :
+  /// le contenu de démonstration comme les publications créées dans l'app
+  /// sont traités exactement pareil, sans code spécifique d'un côté.
+  List<Post> _matchingPosts(List<Post> posts) {
+    if (_query.isEmpty) return const <Post>[];
+    return posts
+        .where(
+          (post) =>
+              post.content.toLowerCase().contains(_query) ||
+              post.authorName.toLowerCase().contains(_query),
+        )
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final posts = ref.watch(feedProvider);
+    final savedIds = ref.watch(savedIdsProvider);
+    final matchingPosts = _matchingPosts(posts);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundAuth,
       body: SafeArea(
         child: Column(
           children: [
-            _Header(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-            ),
+            _Header(controller: _searchController, onChanged: _onSearchChanged),
             const Divider(height: 1),
             Expanded(
               child: AppPage(
@@ -94,6 +122,22 @@ class _ExplorerScreenState extends State<ExplorerScreen> {
                     const SizedBox(height: 20),
                     const _DemoDataNotice(),
                     const SizedBox(height: 20),
+                    // Résultats sur le fil réel, en tête des sections :
+                    // c'est le contenu le plus pertinent pour la requête,
+                    // et le seul lié à des données non simulées.
+                    if (_query.isNotEmpty) ...[
+                      _PublicationsSection(
+                        posts: matchingPosts,
+                        savedIds: savedIds,
+                        onLike: (id) =>
+                            ref.read(feedProvider.notifier).toggleLike(id),
+                        onShare: (id) =>
+                            ref.read(feedProvider.notifier).share(id),
+                        onToggleSave: (id) =>
+                            ref.read(savedIdsProvider.notifier).toggle(id),
+                      ),
+                      const SizedBox(height: 28),
+                    ],
                     _Section(
                       title: 'Tendances',
                       entries: _matches(_trending),
@@ -150,7 +194,11 @@ class _Header extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(
           children: [
-            const Icon(Icons.search_rounded, size: 18, color: AppColors.textMuted),
+            const Icon(
+              Icons.search_rounded,
+              size: 18,
+              color: AppColors.textMuted,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: TextField(
@@ -169,6 +217,55 @@ class _Header extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Section « Publications » : résultats de la recherche sur le fil réel.
+///
+/// Les cartes sont les mêmes que sur l'accueil ([PostCard]) : liker,
+/// commenter, partager ou enregistrer un résultat fonctionne exactement
+/// comme dans le fil, sans état parallèle.
+class _PublicationsSection extends StatelessWidget {
+  const _PublicationsSection({
+    required this.posts,
+    required this.savedIds,
+    required this.onLike,
+    required this.onShare,
+    required this.onToggleSave,
+  });
+
+  final List<Post> posts;
+  final Set<String> savedIds;
+  final ValueChanged<String> onLike;
+  final ValueChanged<String> onShare;
+  final ValueChanged<String> onToggleSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Publications', style: AppTextStyles.explorerSectionTitle),
+        const SizedBox(height: 12),
+        if (posts.isEmpty)
+          const Text(
+            'Aucun résultat : aucune publication ne correspond à la '
+            'recherche.',
+            style: AppTextStyles.createPostHint,
+          )
+        else
+          for (final post in posts) ...[
+            PostCard(
+              post: post,
+              onLike: () => onLike(post.id),
+              onShare: () => onShare(post.id),
+              isSaved: savedIds.contains(post.id),
+              onToggleSave: () => onToggleSave(post.id),
+            ),
+            const SizedBox(height: 10),
+          ],
+      ],
     );
   }
 }
@@ -263,9 +360,7 @@ class _NoticeCard extends StatelessWidget {
         children: [
           const Icon(Icons.person_search_outlined, color: AppColors.textMuted),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(message, style: AppTextStyles.createPostHint),
-          ),
+          Expanded(child: Text(message, style: AppTextStyles.createPostHint)),
         ],
       ),
     );
@@ -318,7 +413,10 @@ class _EntryTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textMuted,
+              ),
             ],
           ),
         ),
