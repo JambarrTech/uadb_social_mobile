@@ -1,10 +1,10 @@
-/// Barre de recherche de l'Exploration : résultats sur les données réelles.
+/// Écran Explorer : maquette riche (chips, tendance, suivre, adhésions).
 library;
 
-// La recherche doit filtrer les PUBLICATIONS du fil (contenu réel), en plus
-// des entrées de démonstration : taper « hackathon » fait remonter la
-// publication de démonstration correspondante, ouvrable et interagissable
-// comme sur l'accueil.
+// Vérifie la structure demandée par la maquette : rangée de pastilles de
+// filtre, publication tendance issue du fil réel, personnes avec bouton
+// « Suivre », communautés avec « Rejoindre », événements avec badge de
+// date — et la recherche qui filtre chaque section (publications incluses).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,11 +15,17 @@ import 'package:uadb_social/shared/widgets/post_card.dart';
 import 'helpers/test_store.dart';
 
 void main() {
-  /// Monte l'Exploration à 390 px avec un stockage en mémoire.
+  /// Monte l'Exploration avec un stockage en mémoire.
+  ///
+  /// Hauteur de surface 1600 px : sous 800 px, les sections basses
+  /// (communautés, événements) sont hors de la zone construite par la
+  /// ListView paresseuse et plein-bord, ce qui rendait les taps de bas de
+  /// page non délivrés ; à 1600 px, tout le contenu tient dans le viewport
+  /// construit. Sur appareil réel la taille est inchangée.
   Future<void> pumpExplorer(WidgetTester tester) async {
     final store = await createTestStore();
 
-    await tester.binding.setSurfaceSize(const Size(390, 800));
+    await tester.binding.setSurfaceSize(const Size(390, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
@@ -31,17 +37,50 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('la barre de recherche est présente et sans requête aucune '
-      'section « Publications »', (tester) async {
+  /// Vide la file des exceptions (RenderFlex overflow etc.).
+  List<Object?> drainExceptions(WidgetTester tester) {
+    final errors = <Object?>[];
+    Object? error;
+    while ((error = tester.takeException()) != null) {
+      errors.add(error);
+    }
+    return errors;
+  }
+
+  testWidgets('état initial : chips, tendance du fil, suivre, rejoindre, '
+      'événements', (tester) async {
     await pumpExplorer(tester);
 
-    expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('Publications'), findsNothing);
-    // Les sections de démonstration sont visibles à l'état initial.
-    expect(find.text('Tendances'), findsOneWidget);
+    // Pastilles de filtre.
+    for (final label in [
+      'Tout',
+      'Personnes',
+      'Publications',
+      'Communautés',
+      'Événements',
+    ]) {
+      expect(find.text(label), findsWidgets, reason: 'pastille « $label »');
+    }
+
+    // Tendance : la publication du fil, en carte interactive réelle.
+    expect(find.text('Publication tendance'), findsOneWidget);
+    expect(find.byType(PostCard), findsWidgets);
+
+    // Suggérés et communautés.
+    expect(find.text('Personnes suggérées'), findsOneWidget);
+    expect(find.textContaining('Suivre'), findsWidgets);
+    expect(find.text('Communautés populaires'), findsOneWidget);
+    expect(find.text('Rejoindre'), findsNWidgets(3));
+    expect(find.textContaining('Journées Portes Ouvertes'), findsOneWidget);
+    expect(find.textContaining('Hackathon IA 2025'), findsOneWidget);
+
+    // La bannière de démonstration encombrante a disparu.
+    expect(find.textContaining('Contenu de démonstration'), findsNothing);
+
+    expect(drainExceptions(tester), isEmpty);
   });
 
-  testWidgets('« hackathon » remonte les publications correspondantes', (
+  testWidgets('« hackathon » remonte la publication correspondante', (
     tester,
   ) async {
     await pumpExplorer(tester);
@@ -49,25 +88,74 @@ void main() {
     await tester.enterText(find.byType(TextField), 'hackathon');
     await tester.pumpAndSettle();
 
-    expect(find.text('Publications'), findsOneWidget);
-    // La publication de démonstration du fil correspond au mot-clé.
     expect(find.textContaining('hackathon de Dakar'), findsWidgets);
-    // Les résultats sont des cartes interagissables, pas des libellés figés.
-    expect(find.byType(PostCard), findsWidgets);
+    // Les sections sans correspondance annoncent leur état vide.
+    expect(
+      find.textContaining('aucune personne ne correspond'),
+      findsOneWidget,
+    );
+    // L'événement « Hackathon IA 2025 · Agriculture » CORRESPOND à la
+    // requête : sa tuile reste affichée, pas d'état vide événements.
+    expect(find.textContaining('Hackathon IA 2025'), findsOneWidget);
+    expect(find.textContaining('aucun événement ne correspond'), findsNothing);
+
+    expect(drainExceptions(tester), isEmpty);
   });
 
-  testWidgets('une requête sans correspondance affiche un état vide clair', (
+  testWidgets('la pastille « Publications » isole la liste des publications', (
     tester,
   ) async {
     await pumpExplorer(tester);
 
-    await tester.enterText(find.byType(TextField), 'inconnuxyz');
+    await tester.tap(find.text('Publications'));
     await tester.pumpAndSettle();
 
+    // Plus de sections personnes/communautés/événements.
+    expect(find.text('Rejoindre'), findsNothing);
+    expect(find.textContaining('Suivre'), findsNothing);
+    // Toutes les publications du fil sont listées (démonstration: 3).
+    expect(find.byType(PostCard), findsNWidgets(3));
+    // Les pastilles restent affichées en haut.
+    expect(find.text('Tout'), findsOneWidget);
+
+    expect(drainExceptions(tester), isEmpty);
+  });
+
+  testWidgets('Suivre bascule en « Suivi » sans détruire la ligne', (
+    tester,
+  ) async {
+    await pumpExplorer(tester);
+
+    // La rangée de personnes est bas de page sous la tendance : on la fait
+    // entrer dans la fenêtre avant de pointer dessus.
+    await tester.ensureVisible(find.text('Suivre').first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Suivre').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Suivi'), findsOneWidget);
     expect(
-      find.textContaining('aucune publication ne correspond'),
-      findsOneWidget,
+      find.text('Suivre'),
+      findsWidgets,
+      reason: 'les autres personnes restent à suivre',
     );
-    expect(find.byType(PostCard), findsNothing);
+
+    expect(drainExceptions(tester), isEmpty);
+  });
+
+  testWidgets('Rejoindre bascule en « Membre »', (tester) async {
+    await pumpExplorer(tester);
+
+    await tester.ensureVisible(find.text('Rejoindre').first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Rejoindre').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Membre'), findsOneWidget);
+    expect(find.text('Rejoindre'), findsNWidgets(2));
+
+    expect(drainExceptions(tester), isEmpty);
   });
 }
